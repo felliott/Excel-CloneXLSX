@@ -32,8 +32,13 @@ around _extract_files => sub {
 };
 
 
-has row_format_no => (is => 'ro', default => sub { {} },);
-has cell_formats  => (is => 'ro', default => sub { {} },);
+for my $attr (qw(row_format_no cell_formats)) {
+    has $attr => (
+        is      => 'ro',
+        isa     => HashRef[ArrayRef[ArrayRef]],
+        default => sub { {} },
+    );
+}
 
 
 around _parse_sheet => sub {
