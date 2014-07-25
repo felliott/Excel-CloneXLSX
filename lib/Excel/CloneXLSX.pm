@@ -3,9 +3,8 @@ package Excel::CloneXLSX;
 use strict;
 use warnings;
 
-use Excel::CloneXLSX::WrappedParser;
 use Excel::CloneXLSX::Format qw(translate_xlsx_format);
-use Excel::Writer::XLSX;
+use Excel::CloneXLSX::Types qw(CloneXlsxParser CloneXlsxWriter);
 use Safe::Isa;
 
 use Moo;
@@ -14,20 +13,18 @@ use namespace::clean;
 
 our $VERSION = "0.01";
 
-has from        => (is => 'ro', lazy => 1, builder => 1);
-has from_fh     => (is => 'ro', required => 1);
-has from_parser => (is => 'ro', lazy => 1, builder => 1);
-sub _build_from { $_[0]->from_parser->parse( $_[0]->from_fh ) }
-sub _build_from_parser { Excel::CloneXLSX::WrappedParser->new }
-
-
-has to    => (is => 'ro', lazy => 1, builder => 1);
-has to_fh => (is => 'ro', lazy => 1, builder => 1);
-sub _build_to { Excel::Writer::XLSX->new( $_[0]->to_fh ) }
-sub _build_to_fh {
-    open my $fh, '>', \my $clone or die 'Nope';
-    return $fh;
-}
+has from => (
+    is       => 'ro',
+    isa      => CloneXlsxParser,
+    coerce   => CloneXlsxParser->coercion,
+    required => 1,
+);
+has to => (
+    is       => 'ro',
+    isa      => CloneXlsxWriter,
+    coerce   => CloneXlsxWriter->coercion,
+    required => 1,
+);
 
 
 has worksheets => (is => 'ro', lazy => 1, builder => 1,);
@@ -48,7 +45,6 @@ sub insert_rows_after {
 sub clone {
     my ($self) = @_;
 
-
     for my $old_wkst (map {$self->from->worksheet($_)} @{ $self->worksheets }) {
         my $new_wkst     = $self->to->add_worksheet($old_wkst->get_name);
         my $old_tabcolor = $old_wkst->get_tab_color();
@@ -61,7 +57,7 @@ sub clone {
         my $col_widths  = $old_wkst->get_col_widths();
         my @col_fmts = map {
             $self->to->add_format( %{ translate_xlsx_format($_) } )
-        } @{ $self->from->{Format} };
+        } @{ $self->from->workbook->{Format} };
         for my $col ($col_min..$col_max) {
             $new_wkst->set_column(
                 $col, $col, $col_widths->[$col],
@@ -76,7 +72,7 @@ sub clone {
 
             for my $col ($col_min..$col_max) {
                 my $cell       = $old_wkst->get_cell($row, $col);
-                my $old_fmt    = $self->from_parser->get_formatting_for_cell(
+                my $old_fmt    = $self->from->get_formatting_for_cell(
                     $old_wkst->{Name}, $row, $col
                 );
                 my $new_format = $old_fmt
@@ -108,7 +104,7 @@ sub clone {
 
                         if (ref $new_format eq 'ARRAY') {
                             my ($delta_row, $delta_col) = @$new_format;
-                            my $old_fmt = $self->from_parser->get_formatting_for_cell(
+                            my $old_fmt = $self->from->get_formatting_for_cell(
                                 $old_wkst->{Name},
                                 $row+$delta_row,
                                 $col+$delta_row,
@@ -132,7 +128,7 @@ sub clone {
     }
 
     $self->to->close;
-    return $self->to_fh;
+    return;
 }
 
 
@@ -150,15 +146,51 @@ Excel::CloneXLSX - Clone an XLSX file and add new rows
 
     use Excel::CloneXLSX;
 
+    # copy old.xlsx to new.xlsx
+    #  (like a worse version of cp)
     Excel::CloneXLSX->new({
-      from => 'old.xlsx',
-      new  => 'new.xlsx',
+      from => 'old.xlsx', to  => 'new.xlsx',
+    })->clone;
+
+    # copy old.xlsx to new.xlsx, but just 'Sheet 2'
+    Excel::CloneXLSX->new({
+      from => 'old.xlsx', to => 'new.xlsx',
+      worksheets => ['Sheet 2'],
+    })->clone;
+
+    # copy old.xlsx to new.xlsx, but just 'Sheet 2'
+    Excel::CloneXLSX->new({
+      from => 'old.xlsx', to => 'new.xlsx',
+      worksheets => ['Sheet 1'],
+      new_rows => {
+        '0' => [
+          [ # this will be second row in the new worksheet
+            {content => '', format => ''},
+            {content => '', format => ''},
+            {content => '', format => ''},
+            {content => '', format => ''},
+          ],
+        ],
     })->clone;
 
 =head1 DESCRIPTION
 
 Excel::CloneXLSX is a module for cloning an Excel file while being
-able to insert new rows.
+able to insert new rows.  It's not very smart.  It will iterate
+through the rows of the old spreadsheet, copying them to the new
+spreadsheet, occasionally adding new rows according to spec.
+
+
+=head1 ATTRIBUTES
+
+=head2 from
+
+=head1 METHODS
+
+=head2 clone
+
+It... clones.
+
 
 =head1 LICENSE
 
