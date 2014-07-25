@@ -80,6 +80,8 @@ sub get_formatting_for_cell {
     return $self->cell_formats->{$sheet_name}[$row][$col];
 }
 
+
+
 1;
 __END__
 
@@ -88,6 +90,7 @@ __END__
 =head1 NAME
 
 Excel::CloneXLSX::WrappedParser - Wrapper for Spreadsheet::ParseXLSX
+
 
 =head1 SYNOPSIS
 
@@ -101,6 +104,7 @@ Excel::CloneXLSX::WrappedParser - Wrapper for Spreadsheet::ParseXLSX
       'Sheet 1', 4, 6
     );
 
+
 =head1 DESCRIPTION
 
 Excel::CloneXLSX::WrappedParser wraps the L<Spreadsheet::ParseXLSX>
@@ -111,7 +115,17 @@ The extra information we currently save is the computed formats for
 every cell in the workbook.  L<Spreadsheet::ParseExcel> doesn't provide
 a way to get at the formatting for a cell with no defined content.
 
+
 =head1 ATTRIBUTES
+
+=head2 filehandle
+
+B<Required>.  A file handle for the spreadsheet to be parsed.
+
+=head2 workbook
+
+The L<Spreadsheet::ParseExcel::Workbook> object returned by
+L<Spreadsheet::ParseXLSX>'s C<parse()> method.
 
 =head2 row_format_no
 
@@ -144,6 +158,14 @@ column-specific format.  They are not additive.
 
 =head1 METHODS
 
+=head2 worksheet
+
+Delegated method to L</workbook>'s C<worksheet> method.
+
+=head2 worksheets
+
+Delegated method to L</workbook>'s C<worksheets> method.
+
 =head2 get_formatting_for_cell( $sheet_name, $row, $col )
 
 Returns the L<Spreadsheet::ParseExcel::Format> object for the cell at
@@ -159,6 +181,7 @@ Copyright (C) Fitz Elliott.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
+
 
 =head1 AUTHOR
 

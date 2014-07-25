@@ -52,6 +52,7 @@ __END__
 
 Excel::CloneXLSX::Types - Type library for Excel::CloneXLSX
 
+
 =head1 SYNOPSIS
 
     use Excel::CloneXLSX::Types qw(CloneXlsxWriter);
@@ -102,6 +103,7 @@ Copyright (C) Fitz Elliott.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
+
 
 =head1 AUTHOR
 
