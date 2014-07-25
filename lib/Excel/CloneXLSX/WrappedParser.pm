@@ -19,19 +19,6 @@ has workbook => (
 );
 sub _build_workbook { $_[0]->parse( $_[0]->filehandle ) };
 
-
-# hash of parsed files
-# i don't use this, but maybe you could.
-has files => (is => 'ro');
-around _extract_files => sub {
-    my $orig = shift;
-    my $self = shift;
-    my $files = $self->$orig(@_);
-    $self->{files} = $files;
-    return $files;
-};
-
-
 for my $attr (qw(row_format_no cell_formats)) {
     has $attr => (
         is      => 'ro',
@@ -125,11 +112,6 @@ every cell in the workbook.  L<Spreadsheet::ParseExcel> doesn't provide
 a way to get at the formatting for a cell with no defined content.
 
 =head1 ATTRIBUTES
-
-=head2 files
-
-The L<XML::Twig> objects that represent the parsed XML files contained
-within the spreadsheet archive.
 
 =head2 row_format_no
 
