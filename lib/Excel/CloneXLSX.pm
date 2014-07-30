@@ -1,8 +1,5 @@
 package Excel::CloneXLSX;
 
-use strict;
-use warnings;
-
 use Excel::CloneXLSX::Format qw(translate_xlsx_format);
 use Excel::CloneXLSX::Types qw(CloneXlsxParser CloneXlsxWriter);
 use Safe::Isa;
@@ -26,20 +23,14 @@ has to => (
     required => 1,
 );
 
-
 has worksheets => (is => 'ro', lazy => 1, builder => 1,);
 sub _build_worksheets { [] }
-
-has row_offset => (is => 'ro', default => 0,);
-sub incr_row_offset { $_[0]->{row_offset}++ }
-
 
 has new_rows => (is => 'ro', default => sub { {} });
 sub insert_rows_after {
     my ($self, $row) = @_;
     return $self->new_rows->{$row} || undef;
 }
-
 
 
 sub clone {
