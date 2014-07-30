@@ -176,11 +176,38 @@ spreadsheet, occasionally adding new rows according to spec.
 
 =head2 from
 
+B<Required>.  The spreadsheet to clone.  Can be passed as a filename,
+a filehandle, or a reference to a scalar.
+
+=head2 to
+
+B<Required>.  The output spreadsheet.  Can be passed as a filename, a
+filehandle, or reference to a scalar.  If you give it an existing
+spreadsheet, that spreadsheet will be overwritten.  This module does
+not modify existing spreadsheets, it just creates new one with
+possible insertions.
+
+If you coerce from a filehandle, you will need to call
+C<< seek $fh, 0, 0; >> on the handle to reset it for reading.
+
+=head2 worksheets
+
+A list of worksheets to restrict the cloning to.  If you do not set
+this, all worksheets in the L</from> workbook will be cloned.
+
+=head2 new_rows
+
+A specification for new rows to insert.
+
 =head1 METHODS
 
 =head2 clone
 
-It... clones.
+It... clones, imperfectly.
+
+This method returns nothing, but calls C<< ->close() >> on the L</to>
+spreadsheet.  Once this is done, the spreadsheet will be ready for
+reading.
 
 
 =head1 LICENSE
@@ -189,6 +216,7 @@ Copyright (C) Fitz Elliott.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
+
 
 =head1 AUTHOR
 
