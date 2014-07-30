@@ -31,7 +31,7 @@ coerce CloneXlsxParser,
 
 declare CloneXlsxOutfile, as FileHandle;
 coerce CloneXlsxOutfile,
-    from Str,       via { IO::File->new($_, 'rw') },
+    from Str,       via { IO::File->new($_, '+>') },
     from ScalarRef, via { open my $fh, '+>', $_; $fh };
 
 class_type CloneXlsxWriter, { class => 'Excel::Writer::XLSX' };
