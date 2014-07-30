@@ -62,7 +62,9 @@ around _parse_sheet => sub {
             'sheetData/row/c' => sub { # get cell-specific format ids
                 my ($twig, $cell) = @_;
                 my ($row, $col) = $self->_cell_to_row_col($cell->att('r'));
-                $formats[$row][$col] = $sheet->{_Book}{Format}[$cell->att('s')];
+                $formats[$row][$col] = defined($cell->att('s'))
+                    ? $sheet->{_Book}{Format}[$cell->att('s')]
+                        : undef;
             },
         }
     );
