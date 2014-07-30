@@ -12,7 +12,9 @@ requires 'Type::Tiny';
 requires 'XML::Twig';
 
 on 'test' => sub {
-    requires 'Test::More', '0.98';
     requires 'Module::Pluggable';
+    requries 'Spreadsheet::ParseExcel';
+    requires 'Test::Fatal';
+    requires 'Test::More', '0.98';
 };
 
