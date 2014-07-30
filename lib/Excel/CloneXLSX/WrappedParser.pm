@@ -19,13 +19,29 @@ has workbook => (
 );
 sub _build_workbook { $_[0]->parse( $_[0]->filehandle ) };
 
-for my $attr (qw(row_format_no cell_formats)) {
-    has $attr => (
-        is      => 'ro',
-        isa     => HashRef[ArrayRef[ArrayRef]],
-        default => sub { {} },
-    );
+has row_format_no => (
+    is      => 'ro',
+    isa     => HashRef[ArrayRef[Int]],
+    default => sub { {} },
+);
+
+has col_format_no => (
+    is      => 'ro',
+    isa     => HashRef[ArrayRef[Int]],
+    lazy    => 1,
+    builder => 1,
+);
+sub _build_col_format_no {
+    return {
+        map { $_->get_name() => [ @{$_->{ColFmtNo}} ] } $_[0]->worksheets
+    };
 }
+
+has cell_formats => (
+    is      => 'ro',
+    isa     => HashRef[ArrayRef[ArrayRef]],
+    default => sub { {} },
+);
 
 
 around _parse_sheet => sub {
@@ -141,6 +157,11 @@ Since we have to store properties for the entire workbook, the row
 formats are indexed by worksheet name and row number.  E.g. the
 default format for row 7 of sheet 'Sheet 1' is available through
  C<< $worksheet->{Format}[ $parser->row_format_no->{'Sheet 1'}[6] ] >>.
+
+=head2 col_format_no
+
+For symmetry, we provide a C<col_format_no> method that is a hashref
+of C<< $sheet_name => \@col_formats >>.
 
 =head2 cell_formats
 
