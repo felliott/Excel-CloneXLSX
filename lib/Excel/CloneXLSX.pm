@@ -3,6 +3,7 @@ package Excel::CloneXLSX;
 use Excel::CloneXLSX::Format qw(translate_xlsx_format);
 use Excel::CloneXLSX::Types qw(CloneXlsxParser CloneXlsxWriter);
 use Safe::Isa;
+use Types::Standard -types;
 
 use Moo;
 use namespace::clean;
@@ -23,8 +24,27 @@ has to => (
     required => 1,
 );
 
-has worksheets => (is => 'ro', lazy => 1, builder => 1,);
-sub _build_worksheets { [] }
+has worksheet_names => (
+    is      => 'ro',
+    isa     => ArrayRef[Str],
+    default => sub { [] },
+);
+
+has _worksheets => (
+    is      => 'ro',
+    isa     => ArrayRef[InstanceOf['Spreadsheet::ParseExcel::Worksheet']],
+    lazy    => 1,
+    builder => 1,
+);
+sub _build__worksheets {
+    my ($self) = @_;
+    my @names = @{$self->worksheet_names};
+    return @names ? [map {$self->from->worksheet($_)} @names]
+        : [$self->from->worksheets()];
+}
+
+
+
 
 has new_rows => (is => 'ro', default => sub { {} });
 sub insert_rows_after {
@@ -36,7 +56,7 @@ sub insert_rows_after {
 sub clone {
     my ($self) = @_;
 
-    for my $old_wkst (map {$self->from->worksheet($_)} @{ $self->worksheets }) {
+    for my $old_wkst (@{ $self->_worksheets }) {
         my $new_wkst     = $self->to->add_worksheet($old_wkst->get_name);
         my $old_tabcolor = $old_wkst->get_tab_color();
         $new_wkst->set_tab_color($old_tabcolor) if ($old_tabcolor);
@@ -190,10 +210,10 @@ possible insertions.
 If you coerce from a filehandle, you will need to call
 C<< seek $fh, 0, 0; >> on the handle to reset it for reading.
 
-=head2 worksheets
+=head2 worksheet_names
 
-A list of worksheets to restrict the cloning to.  If you do not set
-this, all worksheets in the L</from> workbook will be cloned.
+A list of worksheet namess to restrict the cloning to.  If you do not
+set this, all worksheets in the L</from> workbook will be cloned.
 
 =head2 new_rows
 
