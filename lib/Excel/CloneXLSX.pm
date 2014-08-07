@@ -72,7 +72,9 @@ sub clone {
         for my $col ($col_min..$col_max) {
             $new_wkst->set_column(
                 $col, $col, $col_widths->[$col],
-                $col_fmts[ $old_wkst->{ColFmtNo}[$col] ],
+                (defined($old_wkst->{ColFmtNo}[$col])
+                    ? $col_fmts[ $old_wkst->{ColFmtNo}[$col] ]
+                    : undef),
             );
         }
 
