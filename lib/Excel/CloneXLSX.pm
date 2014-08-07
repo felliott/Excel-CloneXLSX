@@ -204,8 +204,8 @@ a filehandle, or a reference to a scalar.
 B<Required>.  The output spreadsheet.  Can be passed as a filename, a
 filehandle, or reference to a scalar.  If you give it an existing
 spreadsheet, that spreadsheet will be overwritten.  This module does
-not modify existing spreadsheets, it just creates new one with
-possible insertions.
+not modify existing spreadsheets, it creates new one with possible
+insertions.
 
 If you coerce from a filehandle, you will need to call
 C<< seek $fh, 0, 0; >> on the handle to reset it for reading.
@@ -243,4 +243,3 @@ it under the same terms as Perl itself.
 Fitz Elliott E<lt>felliott@fiskur.orgE<gt>
 
 =cut
-
