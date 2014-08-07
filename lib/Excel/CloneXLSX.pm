@@ -84,18 +84,16 @@ sub clone {
             $new_wkst->set_row($row+$row_offset, $row_heights->[$row]);
 
             for my $col ($col_min..$col_max) {
-                my $cell       = $old_wkst->get_cell($row, $col);
-                my $old_fmt    = $self->from->get_formatting_for_cell(
+                my $cell    = $old_wkst->get_cell($row, $col);
+                my $content = $cell->$_call_if_object('unformatted');
+                my $old_fmt = $self->from->get_formatting_for_cell(
                     $old_wkst->{Name}, $row, $col
                 );
                 my $new_format = $old_fmt
                     ? $self->to->add_format(%{ translate_xlsx_format($old_fmt) })
                         : undef;
-                $new_wkst->write(
-                    $row+$row_offset, $col,
-                    ($cell->$_call_if_object('unformatted') || undef),
-                    $new_format
-                );
+
+                $new_wkst->write($row+$row_offset, $col, $content, $new_format);
             }
 
             if (my $new_rows = $self->insert_rows_after($row)) {
