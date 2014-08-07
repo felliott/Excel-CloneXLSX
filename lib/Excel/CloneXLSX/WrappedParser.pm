@@ -98,6 +98,21 @@ sub get_formatting_for_cell {
     return $self->cell_formats->{$sheet_name}[$row][$col];
 }
 
+sub get_row_format {
+    my ($self, $sheet_name, $row) = @_;
+    my $row_fmt_no = $self->row_format_no->{$sheet_name}[$row];
+    return defined($row_fmt_no)
+        ? $self->workbook->{Format}[ $row_fmt_no ] : undef;
+}
+
+sub get_col_format {
+    my ($self, $sheet_name, $col) = @_;
+    my $col_fmt_no = $self->col_format_no->{$sheet_name}[$col];
+    return defined($col_fmt_no)
+        ? $self->workbook->{Format}[ $col_fmt_no ] : undef;
+}
+
+
 
 
 1;
@@ -196,6 +211,20 @@ Returns the L<Spreadsheet::ParseExcel::Format> object for the cell at
 the 0-based coordinates of the cell. E.g: "A5" = (4,0), "C7" = (6,2)
 The C<sheetRef()> method of L<Spreadsheet::ParseExcel::Utility> will
 convert Excel notation to zero-indexing.
+
+=head2 get_row_format( $sheet_name, $row )
+
+Returns the L<Spreadsheet::ParseExcel::Format> object that contains
+the defaults for row C<$row> in sheet C<$sheet_name>.  C<$row> is the
+0-based index of the row. Returns C<undef> if no such formatting
+exists.
+
+=head2 get_col_format( $sheet_name, $col )
+
+Returns the L<Spreadsheet::ParseExcel::Format> object that contains
+the defaults for column C<$col> in sheet C<$sheet_name>.  C<$col> is
+the 0-based index of the column. Returns C<undef> if no such
+formatting exists.
 
 
 =head1 LICENSE
