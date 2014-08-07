@@ -21,13 +21,13 @@ sub _build_workbook { $_[0]->parse( $_[0]->filehandle ) };
 
 has row_format_no => (
     is      => 'ro',
-    isa     => HashRef[ArrayRef[Int]],
+    isa     => HashRef[ArrayRef[Maybe[Int]]],
     default => sub { {} },
 );
 
 has col_format_no => (
     is      => 'ro',
-    isa     => HashRef[ArrayRef[Int]],
+    isa     => HashRef[ArrayRef[Maybe[Int]]],
     lazy    => 1,
     builder => 1,
 );
