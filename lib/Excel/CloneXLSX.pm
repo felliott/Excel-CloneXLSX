@@ -43,14 +43,7 @@ sub _build__worksheets {
         : [$self->from->worksheets()];
 }
 
-
-
-
-has new_rows => (is => 'ro', default => sub { {} });
-sub insert_rows_after {
-    my ($self, $row) = @_;
-    return $self->new_rows->{$row} || undef;
-}
+has new_rows => ( is => 'ro', default => sub { {} }, );
 
 
 sub clone {
@@ -79,6 +72,9 @@ sub clone {
         }
 
         my $row_offset = 0;
+        $row_offset += $self->_append_rows_after(
+            $old_wkst, $new_wkst, -1, $row_offset
+        );
 
         for my $row ($row_min..$row_max) {
             $new_wkst->set_row($row+$row_offset, $row_heights->[$row]);
@@ -96,45 +92,9 @@ sub clone {
                 $new_wkst->write($row+$row_offset, $col, $content, $new_format);
             }
 
-            if (my $new_rows = $self->insert_rows_after($row)) {
-                for my $new_row (@$new_rows) {
-                    $row_offset++;
-                    for my $col ($col_min..$col_max) {
-                        my $new_cell = $new_row->[$col];
-
-                        my ($new_content, $new_format)
-                            = @{$new_cell}{qw(content format)};
-
-                        if (ref $new_content eq 'ARRAY') {
-                            my ($delta_row, $delta_col) = @$new_content;
-                            $new_content = $old_wkst->get_cell(
-                                $row+$delta_row,
-                                $col+$delta_row,
-                            )->$_call_if_object('unformatted') || undef;
-                        }
-
-                        if (ref $new_format eq 'ARRAY') {
-                            my ($delta_row, $delta_col) = @$new_format;
-                            my $old_fmt = $self->from->get_formatting_for_cell(
-                                $old_wkst->{Name},
-                                $row+$delta_row,
-                                $col+$delta_row,
-                            );
-
-                            $new_format = $old_fmt
-                                ? $self->to->add_format(%{ translate_xlsx_format($old_fmt) })
-                                    : undef;
-                        }
-                        elsif (ref $new_format eq 'HASH') {
-                            $new_format = $self->to->add_format( %$new_format );
-                        }
-
-                        my @args = ( $row+$row_offset, $col, $new_content );
-                        push @args, $new_format if ($new_format);
-                        $new_wkst->write(@args);
-                    }
-                }
-            }
+            $row_offset += $self->_append_rows_after(
+                $old_wkst, $new_wkst, $row, $row_offset
+            );
         }
     }
 
@@ -143,6 +103,55 @@ sub clone {
 }
 
 
+sub _append_rows_after {
+    my ($self, $old_wkst, $new_wkst, $row, $row_offset) = @_;
+
+    return 0 unless (exists $self->new_rows->{$row});
+
+    my $rows_added = 0;
+    my ($col_min, $col_max) = $old_wkst->col_range();
+    my $new_rows = $self->new_rows->{$row};
+    for my $new_row (@$new_rows) {
+        $rows_added++;
+
+        for my $col ($col_min..$col_max) {
+            my $new_cell = $new_row->[$col];
+
+            my ($new_content, $new_format)
+                = @{$new_cell}{qw(content format)};
+
+            if (ref $new_content eq 'ARRAY') {
+                my ($delta_row, $delta_col) = @$new_content;
+                $new_content = $old_wkst->get_cell(
+                    $row+$delta_row,
+                    $col+$delta_col,
+                )->$_call_if_object('unformatted') || undef;
+            }
+
+            if (ref $new_format eq 'ARRAY') {
+                my ($delta_row, $delta_col) = @$new_format;
+                my $old_fmt = $self->from->get_formatting_for_cell(
+                    $old_wkst->{Name},
+                    $row+$delta_row,
+                    $col+$delta_col,
+                );
+
+                $new_format = $old_fmt
+                    ? $self->to->add_format(%{ translate_xlsx_format($old_fmt) })
+                        : undef;
+            }
+            elsif (ref $new_format eq 'HASH') {
+                $new_format = $self->to->add_format( %$new_format );
+            }
+
+            my @args = ( $row+$row_offset+$rows_added, $col, $new_content );
+            push @args, $new_format if ($new_format);
+            $new_wkst->write(@args);
+        }
+    }
+
+    return $rows_added;
+}
 
 1;
 __END__
