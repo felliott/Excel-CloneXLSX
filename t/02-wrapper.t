@@ -42,7 +42,7 @@ my $wrapped = 't/data/wrapped.xlsx';
     for my $bgcolor (@bgcolors) {
         my ($cell, $color) = @$bgcolor;
         my $fmt = $parser->get_formatting_for_cell( $worksheet, sheetRef($cell) );
-        is lc($fmt->{Fill}[1]), $color, "Cell $cell has bgcolor $color";
+        is lc($fmt->{Fill}[1] || ''), $color, "Cell $cell has bgcolor $color";
     }
 }
 
