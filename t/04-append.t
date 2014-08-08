@@ -1,6 +1,9 @@
 use strict;
 use warnings;
 
+use lib q{t/lib};
+
+use t::CloneXLSX::Utils qw(:all);
 use Test::Fatal;
 use Test::More 0.98;
 
@@ -41,55 +44,22 @@ my $append = 't/data/append.xlsx';
     is_deeply [map {$_->get_name} $workbook->worksheets()], [qw(Append)],
         'same workbooks';
     my $wkst = $workbook->worksheet('Append');
-
-    my ($row_min, $row_max) = $wkst->row_range();
-    my ($col_min, $col_max) = $wkst->col_range();
-
-    subtest 'Cell Ranges' => sub {
-        is $row_min, 0, 'Rows start at 0';
-        is $row_max, 4, 'Rows end at 4';
-        is $col_min, 0, 'Cols start at 0';
-        is $col_max, 2, 'Cols end at 2';
-    };
-
-
-    subtest 'Cell Contents' => sub {
-        my $contents;
-        for my $row ($row_min..$row_max) {
-            for my $col ($col_min..$col_max) {
-                $contents->[$row][$col] = $wkst->get_cell($row, $col)->value;
-            }
-        }
-
-        my @expect = (
-            [qw(dog foo car)],
-            [qw(moo boo foo)],
-            [qw(bar car par)],
-            [qw(aaa bbb ccc)],
-            [qw(quux ducks trucks)],
-        );
-        is_deeply $contents, \@expect, 'Contents are as expected';
-    };
-
-    subtest 'Cell Formats' => sub {
-        my $bgcolors;
-        for my $row ($row_min..$row_max) {
-            for my $col ($col_min..$col_max) {
-                my $fmt = $parser->get_cell_format('Append', $row, $col);
-                $bgcolors->[$row][$col] = $fmt && $fmt->{Fill}
-                    ? lc($fmt->{Fill}[1]) : undef;
-            }
-        }
-
-        my @expect = (
-            [undef, undef, undef,],
-            ['#ff0000', '#ff0000', '#ff0000',],
-            [undef, undef, undef,],
-            ['#ff0000', '#0000ff', '#ff0000',],
-            ['#0000ff', '#0000ff', '#0000ff',],
-        );
-        is_deeply $bgcolors, \@expect, 'Formatting is as expected';
-    };
+    worksheet_range_is($wkst, [0,4], [0,2]);
+    cell_contents_are($wkst, [
+        [qw(dog  foo   car   )],
+        [qw(moo  boo   foo   )],
+        [qw(bar  car   par   )],
+        [qw(aaa  bbb   ccc   )],
+        [qw(quux ducks trucks)],
+    ]);
+    my ($red, $green, $blue) = ('#ff0000', '#008000', '#0000ff');
+    cell_bgcolors_are($parser, $wkst, [
+        [undef, undef, undef, ],
+        [$red,  $red,  $red,  ],
+        [undef, undef, undef, ],
+        [$red,  $blue, $red,  ],
+        [$blue, $blue, $blue, ],
+    ]);
 }
 
 done_testing();

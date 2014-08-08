@@ -1,14 +1,14 @@
 use strict;
 use warnings;
 
+use lib q{t/lib};
+
+use t::CloneXLSX::Utils qw(:all);
 use Test::Fatal;
 use Test::More 0.98;
 
 use Excel::CloneXLSX;
 use File::Temp qw(tempfile);
-use Safe::Isa;
-use Spreadsheet::ParseExcel::Utility qw(sheetRef);
-
 
 my $clone_easy = 't/data/clone-easy.xlsx';
 {
@@ -18,101 +18,42 @@ my $clone_easy = 't/data/clone-easy.xlsx';
         to   => $tempfile,
     })->clone;
 
-    compare_xlsx($clone_easy, $tempfile);
+    open my $new_fh, '<', $tempfile or die "Can't open $tempfile: $!";
+    my $parser = Excel::CloneXLSX::WrappedParser->new({
+        filehandle => $new_fh,
+    });
+    my $workbook = $parser->workbook;
+
+    is_deeply [map {$_->get_name} $workbook->worksheets()],
+        [qw(EmptyCells TextCells)],
+            'same workbooks';
+
+    subtest 'EmptyCells worksheet' => sub {
+        my $wkst = $workbook->worksheet('EmptyCells');
+        worksheet_range_is($wkst, [0,3], [0,3]);
+        # cell_contents_are($wkst, [
+        #     [undef, q{},   q{},   undef, ],
+        #     [q{},   q{},   q{},   q{},   ],
+        #     [q{},   q{},   q{},   q{},   ],
+        #     [undef, q{},   q{},   q{},   ],
+        # ]);
+        my ($red, $green, $blue) = ('#ff0000', '#008000', '#0000ff');
+        cell_bgcolors_are($parser, $wkst, [
+            [undef,  $blue, $green, undef,  ],
+            [$red,   $blue, $green, $red,   ],
+            [$green, $red,  $green, $red,   ],
+            [undef,  $blue, $blue,  $green, ],
+
+        ]);
+    };
+
+    subtest 'TextCells worksheet' => sub {
+        my $wkst = $workbook->worksheet('TextCells');
+        worksheet_range_is($wkst, [0,2], [0,2]);
+        cell_contents_are($wkst, [ [qw(A B C)], [qw(D E F)], [qw(G H I)] ]);
+        cell_bgcolors_are($parser, $wkst, [([(undef) x (3)]) x (3)]);
+    };
+
 }
 
 done_testing();
-
-
-sub compare_xlsx {
-    my ($orig, $clone) = @_;
-
-    my @xlsxs = (
-        {filename => $orig},
-        {filename => $clone},
-    );
-
-    for my $xlsx (@xlsxs) {
-        die "Nerp: $xlsx->{filename}" unless (-e $xlsx->{filename});
-        open my $fh, '<', $xlsx->{filename} or die "Can't open $xlsx->{filename}: $!";
-        $xlsx->{parser} = Excel::CloneXLSX::WrappedParser->new({
-            filehandle => $fh,
-        });
-        $xlsx->{workbook} = $xlsx->{parser}->workbook;
-
-        $xlsx->{wkst_names} = [map {$_->get_name} $xlsx->{workbook}->worksheets];
-    }
-
-
-    for my $wkst_name (@{ $xlsxs[0]->{wkst_names} }) {
-        my @wksts = map {{wkst => $_->{workbook}->worksheet($wkst_name)}} @xlsxs;
-
-        for my $wkst (@wksts) {
-            @{ $wkst }{ qw(row_min row_max col_min col_max) }
-                = ($wkst->{wkst}->row_range(),$wkst->{wkst}->col_range());
-        }
-
-        is $wksts[1]->{row_min}, $wksts[0]->{row_min}, 'row_mins are the same';
-        is $wksts[1]->{row_max}, $wksts[0]->{row_max}, 'row_maxs are the same';
-        is $wksts[1]->{col_min}, $wksts[0]->{col_min}, 'col_mins are the same';
-        is $wksts[1]->{col_max}, $wksts[0]->{col_max}, 'col_maxs are the same';
-
-        # for my $row ($wksts[0]->{row_min}..$wksts[0]->{row_max}) {
-        #     _cmp_formats(
-        #         $xlsxs[1]->{parser}->get_row_format($wkst_name, $row),
-        #         $xlsxs[0]->{parser}->get_row_format($wkst_name, $row),
-        #         "Row formats for $row are the same",
-        #     );
-        # }
-
-        # for my $col ($wksts[0]->{col_min}..$wksts[0]->{col_max}) {
-        #     _cmp_formats(
-        #         $xlsxs[1]->{parser}->get_col_format($wkst_name, $col),
-        #         $xlsxs[0]->{parser}->get_col_format($wkst_name, $col),
-        #         "Col formats for $col are the same",
-        #     );
-        # }
-
-        for my $row ($wksts[0]->{row_min}..$wksts[0]->{row_max}) {
-            for my $col ($wksts[0]->{col_min}..$wksts[0]->{col_max}) {
-                # _cmp_formats(
-                #     $xlsxs[1]{parser}->get_cell_format($wkst_name, $row, $col),
-                #     $xlsxs[0]{parser}->get_cell_format($wkst_name, $row, $col),
-                #     "Cell formats for ($row, $col) are equal",
-                # );
-
-                my $got = $wksts[1]->{wkst}->get_cell($row,$col)->$_call_if_object('value');
-                my $expect = $wksts[0]->{wkst}->get_cell($row,$col)->$_call_if_object('value');
-                is(
-                    (defined $got ? $got : ''),
-                    (defined $expect ? $expect : ''),
-                    "Cell values for ($row, $col) are equal");
-            }
-        }
-
-
-    }
-
-
-}
-
-
-sub _cmp_formats {
-    my $fmt1 = shift;
-    my $fmt2 = shift;
-
-    # my @ignore_fields = qw(
-    #     IgnoreFont FmtIdx IgnoreAlignment FontNo IgnoreNumberFormat Hidden
-    #     Merged IgnoreFill IgnoreBorder IgnoreProtection Wrap
-    # );
-    # for my $key (@ignore_fields) {
-    #     delete $fmt1->{$key};
-    #     delete $fmt2->{$key};
-    # }
-    # is_deeply $fmt1, $fmt2, @_;
-
-    my @cmp_fields = qw(AlignH AlignV BdrColor BdrDiag BdrStyle Fill);
-    my %cmp1 = map {$_ => $fmt1->{$_}} @cmp_fields;
-    my %cmp2 = map {$_ => $fmt2->{$_}} @cmp_fields;
-    is_deeply \%cmp1, \%cmp2;
-}
