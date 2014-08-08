@@ -76,8 +76,8 @@ sub compare_xlsx {
         for my $row ($wksts[0]->{row_min}..$wksts[0]->{row_max}) {
             for my $col ($wksts[0]->{col_min}..$wksts[0]->{col_max}) {
                 # _cmp_formats(
-                #     $xlsxs[1]{parser}->get_formatting_for_cell($wkst_name, $row, $col),
-                #     $xlsxs[0]{parser}->get_formatting_for_cell($wkst_name, $row, $col),
+                #     $xlsxs[1]{parser}->get_cell_format($wkst_name, $row, $col),
+                #     $xlsxs[0]{parser}->get_cell_format($wkst_name, $row, $col),
                 #     "Cell formats for ($row, $col) are equal",
                 # );
 

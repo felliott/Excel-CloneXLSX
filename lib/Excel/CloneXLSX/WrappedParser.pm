@@ -93,7 +93,7 @@ around _parse_sheet => sub {
 };
 
 
-sub get_formatting_for_cell {
+sub get_cell_format {
     my ($self, $sheet_name, $row, $col) = @_;
     return $self->cell_formats->{$sheet_name}[$row][$col];
 }
@@ -133,7 +133,7 @@ Excel::CloneXLSX::WrappedParser - Wrapper for Spreadsheet::ParseXLSX
     my $workbook = $parser->parse('foo.xlsx');
 
     # get format for cell G5 (row 4, col 6)
-    my $format = $parser->get_formatting_for_cell(
+    my $format = $parser->get_cell_format(
       'Sheet 1', 4, 6
     );
 
@@ -186,7 +186,7 @@ A hashref of 2-D arrayrefs that stores the
 L<Spreadsheet::ParseExcel::Format> objects for each cell in each
 worksheet.  Get at them via:
 C<< $parser->cell_formats->{$sheet_name}[$row][$col] >>, or just use the
-C<get_formatting_for_cell()> method.
+C<get_cell_format()> method.
 
 A cell can have three types of formats applied to it: cell-specific,
 row-default, column-default.  A cell-specific format will take
@@ -204,7 +204,7 @@ Delegated method to L</workbook>'s C<worksheet> method.
 
 Delegated method to L</workbook>'s C<worksheets> method.
 
-=head2 get_formatting_for_cell( $sheet_name, $row, $col )
+=head2 get_cell_format( $sheet_name, $row, $col )
 
 Returns the L<Spreadsheet::ParseExcel::Format> object for the cell at
 (C<$row>, C<$col>) in sheet C<$sheet_name>.  C<$row> and C<$col> are

@@ -82,7 +82,7 @@ sub clone {
             for my $col ($col_min..$col_max) {
                 my $cell    = $old_wkst->get_cell($row, $col);
                 my $content = $cell->$_call_if_object('unformatted');
-                my $old_fmt = $self->from->get_formatting_for_cell(
+                my $old_fmt = $self->from->get_cell_format(
                     $old_wkst->{Name}, $row, $col
                 );
                 my $new_format = $old_fmt
@@ -130,7 +130,7 @@ sub _append_rows_after {
 
             if (ref $new_format eq 'ARRAY') {
                 my ($delta_row, $delta_col) = @$new_format;
-                my $old_fmt = $self->from->get_formatting_for_cell(
+                my $old_fmt = $self->from->get_cell_format(
                     $old_wkst->{Name},
                     $row+$delta_row,
                     $col+$delta_col,
