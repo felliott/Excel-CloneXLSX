@@ -81,9 +81,11 @@ sub compare_xlsx {
                 #     "Cell formats for ($row, $col) are equal",
                 # );
 
+                my $got = $wksts[1]->{wkst}->get_cell($row,$col)->$_call_if_object('value');
+                my $expect = $wksts[0]->{wkst}->get_cell($row,$col)->$_call_if_object('value');
                 is(
-                    ($wksts[1]->{wkst}->get_cell($row,$col)->$_call_if_object('value') // ''),
-                    ($wksts[0]->{wkst}->get_cell($row,$col)->$_call_if_object('value') // ''),
+                    (defined $got ? $got : ''),
+                    (defined $expect ? $expect : ''),
                     "Cell values for ($row, $col) are equal");
             }
         }
