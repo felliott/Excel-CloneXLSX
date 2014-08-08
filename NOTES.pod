@@ -1,0 +1,47 @@
+=head1 NAME
+
+NOTES.pod - Persistent Brain-Value Storage
+
+=head1 New Row Specification
+
+The new row spec data-structure isa:
+
+ HashRef[ ArrayRef [ ArrayRef [ HashRef ] ] ]
+
+or
+
+ NewRowsSpec:
+   { AppendAfterRowNum => RowSpec, ... }
+
+ AppendAfterRowNum
+   -1,0,1...
+
+ RowSpec
+   [ CellSpec, ... ]
+
+ CellSpec
+   { content => ContentSpec, format => FormatSpec }
+
+ ContentSpec
+   Value | Coords
+
+ FormatSpec
+   Excel::Writer::Format | Coords
+
+ Coords
+  [ DeltaRow, DeltaCol ]
+
+
+
+Handy:
+
+Coords should be able to specify absolute coords
+
+RowSpec should be able to be a sub {}?
+  sub would take same args as _append_rows_after()
+  sub should return number of rows added
+
+
+=cut
+
+
