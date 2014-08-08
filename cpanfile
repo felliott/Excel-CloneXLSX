@@ -14,7 +14,7 @@ requires 'XML::Twig';
 on 'test' => sub {
     requires 'File::Temp';
     requires 'Module::Pluggable';
-    requries 'Spreadsheet::ParseExcel';
+    requires 'Spreadsheet::ParseExcel';
     requires 'Test::Fatal';
     requires 'Test::More', '0.98';
 };
