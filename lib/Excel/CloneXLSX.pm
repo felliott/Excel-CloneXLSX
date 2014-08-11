@@ -8,8 +8,8 @@ use Types::Standard -types;
 use Moo;
 use namespace::clean;
 
-
 our $VERSION = "0.02";
+
 
 has from => (
     is       => 'ro',

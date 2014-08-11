@@ -15,6 +15,8 @@ use Type::Library
 use Type::Utils -all;
 use Types::Standard -types;
 
+our $VERSION = "0.02";
+
 
 declare CloneXlsxInfile, as FileHandle;
 coerce CloneXlsxInfile,
