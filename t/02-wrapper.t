@@ -27,22 +27,28 @@ my $wrapped = 't/data/wrapped.xlsx';
     my ($worksheet, $red, $green, $blue)
         = ('EmptyCells', '#ff0000', '#008000', '#0000ff');
     my @bgcolors = (
-        ['A1', '' ],
-        ['B1', $blue ],
-        ['C1', $green],
-        ['A2', $red  ],
-        ['B2', $blue ],
-        ['C2', $green],
-        ['A3', $green],
-        ['B3', $red  ],
-        ['C3', $green],
-        ['D4', $green],
+        ['A1', '',     '',    ],
+        ['B1', '',     $blue, ],
+        ['C1', $green, $green ],
+        ['A2', '',     $red,  ],
+        ['B2', $blue,  $blue, ],
+        ['C2', $green, $green,],
+        ['A3', $green, $green,],
+        ['B3', '',     $red,  ],
+        ['C3', $green, $green,],
+        ['D4', $green, $green,],
     );
 
     for my $bgcolor (@bgcolors) {
-        my ($cell, $color) = @$bgcolor;
-        my $fmt = $parser->get_cell_format( $worksheet, sheetRef($cell) );
-        is lc($fmt->{Fill}[1] || ''), $color, "Cell $cell has bgcolor $color";
+        my ($cell, $act_color, $comp_color) = @$bgcolor;
+
+        my $act_fmt = $parser->get_cell_format( $worksheet, sheetRef($cell) );
+        is lc($act_fmt->{Fill}[1] || ''),
+            $act_color, "Cell $cell has actual bgcolor $act_color";
+
+        my $comp_fmt = $parser->get_computed_cell_format( $worksheet, sheetRef($cell) );
+        is lc($comp_fmt->{Fill}[1] || ''),
+            $comp_color, "Cell $cell has computed bgcolor $comp_color";
     }
 }
 

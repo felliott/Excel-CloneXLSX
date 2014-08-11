@@ -37,7 +37,7 @@ sub _build_col_format_no {
     };
 }
 
-has cell_formats => (
+has cell_format_no => (
     is      => 'ro',
     isa     => HashRef[ArrayRef[ArrayRef]],
     default => sub { {} },
@@ -47,8 +47,6 @@ has cell_formats => (
 around _parse_sheet => sub {
     my ($orig, $self, $sheet, $sheet_file) = @_;
     $self->$orig($sheet, $sheet_file);
-
-    my @formats;
 
     my $sheet_xml = XML::Twig->new(
         twig_roots => {
@@ -62,57 +60,49 @@ around _parse_sheet => sub {
             'sheetData/row/c' => sub { # get cell-specific format ids
                 my ($twig, $cell) = @_;
                 my ($row, $col) = $self->_cell_to_row_col($cell->att('r'));
-                $formats[$row][$col] = defined($cell->att('s'))
-                    ? $sheet->{_Book}{Format}[$cell->att('s')]
-                        : undef;
+                $self->cell_format_no->{$sheet->{Name}}[$row][$col]
+                    = $cell->att('s');
+                $twig->purge;
             },
         }
     );
     $sheet_xml->parse( $sheet_file );
-
-    my ($row_min, $row_max, $col_min, $col_max)
-        = @{$sheet}{qw(MinRow MaxRow MinCol MaxCol)};
-
-    # set format for each cell:
-    #  cell-specific > row-default > col-default
-    for my $row ($row_min..$row_max) {
-        for my $col ($col_min..$col_max) {
-            next if (defined $formats[$row][$col]);
-
-            # check for row format
-            if (defined $self->row_format_no->{$sheet->{Name}}[$row]) {
-                $formats[$row][$col] = $sheet->{_Book}{Format}[$self->row_format_no->{$sheet->{Name}}[$row]];
-            }
-            elsif (defined $sheet->{ColFmtNo}[$col]) {
-                $formats[$row][$col] = $sheet->{_Book}{Format}[$sheet->{ColFmtNo}[$col]];
-            }
-        }
-    }
-
-    $self->cell_formats->{$sheet->{Name}} = \@formats;
 };
-
 
 sub get_cell_format {
     my ($self, $sheet_name, $row, $col) = @_;
-    return $self->cell_formats->{$sheet_name}[$row][$col];
+    return $self->lookup_format(
+        $self->cell_format_no->{$sheet_name}[$row][$col]
+    );
 }
 
 sub get_row_format {
     my ($self, $sheet_name, $row) = @_;
-    my $row_fmt_no = $self->row_format_no->{$sheet_name}[$row];
-    return defined($row_fmt_no)
-        ? $self->workbook->{Format}[ $row_fmt_no ] : undef;
+    return $self->lookup_format( $self->row_format_no->{$sheet_name}[$row] );
 }
 
 sub get_col_format {
     my ($self, $sheet_name, $col) = @_;
-    my $col_fmt_no = $self->col_format_no->{$sheet_name}[$col];
-    return defined($col_fmt_no)
-        ? $self->workbook->{Format}[ $col_fmt_no ] : undef;
+    return $self->lookup_format( $self->col_format_no->{$sheet_name}[$col] );
 }
 
+sub get_computed_cell_format {
+    my ($self, $sheet_name, $row, $col) = @_;
+    my $fmt_no = $self->cell_format_no->{$sheet_name}[$row][$col];
+    if (not defined $fmt_no) {
+        $fmt_no = $self->row_format_no->{$sheet_name}[$row];
+    }
+    if (not defined $fmt_no) {
+        $fmt_no = $self->col_format_no->{$sheet_name}[$col];
+    }
 
+    return $self->lookup_format( $fmt_no );
+}
+
+sub lookup_format {
+    my ($self, $fmt_no) = @_;
+    return defined $fmt_no ? $self->workbook->{Format}[ $fmt_no ] : undef;
+}
 
 
 1;
@@ -180,18 +170,14 @@ default format for row 7 of sheet 'Sheet 1' is available through
 For symmetry, we provide a C<col_format_no> method that is a hashref
 of C<< $sheet_name => \@col_formats >>.
 
-=head2 cell_formats
+=head2 cell_format_no
 
-A hashref of 2-D arrayrefs that stores the
-L<Spreadsheet::ParseExcel::Format> objects for each cell in each
-worksheet.  Get at them via:
-C<< $parser->cell_formats->{$sheet_name}[$row][$col] >>, or just use the
-C<get_cell_format()> method.
+A hashref of 2-D arrayrefs that stores the format ID specific to the
+cell. To get the actual L<Spreadsheet::ParseExcel::Format> object, use
+the C<get_cell_format()> method.
 
 A cell can have three types of formats applied to it: cell-specific,
-row-default, column-default.  A cell-specific format will take
-precedence over a row-specfic format, which takes precedence over a
-column-specific format.  They are not additive.
+row-default, column-default.
 
 
 =head1 METHODS
@@ -203,14 +189,6 @@ Delegated method to L</workbook>'s C<worksheet> method.
 =head2 worksheets
 
 Delegated method to L</workbook>'s C<worksheets> method.
-
-=head2 get_cell_format( $sheet_name, $row, $col )
-
-Returns the L<Spreadsheet::ParseExcel::Format> object for the cell at
-(C<$row>, C<$col>) in sheet C<$sheet_name>.  C<$row> and C<$col> are
-the 0-based coordinates of the cell. E.g: "A5" = (4,0), "C7" = (6,2)
-The C<sheetRef()> method of L<Spreadsheet::ParseExcel::Utility> will
-convert Excel notation to zero-indexing.
 
 =head2 get_row_format( $sheet_name, $row )
 
@@ -225,6 +203,31 @@ Returns the L<Spreadsheet::ParseExcel::Format> object that contains
 the defaults for column C<$col> in sheet C<$sheet_name>.  C<$col> is
 the 0-based index of the column. Returns C<undef> if no such
 formatting exists.
+
+=head2 get_cell_format( $sheet_name, $row, $col )
+
+Returns the L<Spreadsheet::ParseExcel::Format> object for the cell at
+(C<$row>, C<$col>) in sheet C<$sheet_name>.  C<$row> and C<$col> are
+the 0-based coordinates of the cell. E.g: "A5" = (4,0), "C7" = (6,2)
+The C<sheetRef()> method of L<Spreadsheet::ParseExcel::Utility> will
+convert Excel notation to zero-indexing. Returns C<undef> if the cell
+does not have its own format.
+
+=head2 get_computed_cell_format( $sheet_name, $row, $col )
+
+Returns the L<Spreadsheet::ParseExcel::Format> object for the cell at
+(C<$row>, C<$col>) in sheet C<$sheet_name>, taking into account row
+and column formatting.  A cell-specific format will take precedence
+over a row-specfic format, which takes precedence over a
+column-specific format.  They are not additive.
+
+=head2 lookup_format ( $format_no )
+
+L<Spreadsheet::ParseExcel> stores the
+L<Spreadsheet::ParseExcel::Format> objects for the spreadsheet in the
+C<Format> key of the workbook object.  This method provides a simple
+lookup interface for that.  If C<$format_no> is undefined,
+C<lookup_format> will return undefined as well.
 
 
 =head1 LICENSE
