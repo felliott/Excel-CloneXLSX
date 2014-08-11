@@ -31,12 +31,18 @@ my $clone_easy = 't/data/clone-easy.xlsx';
     subtest 'EmptyCells worksheet' => sub {
         my $wkst = $workbook->worksheet('EmptyCells');
         worksheet_range_is($wkst, [0,3], [0,3]);
-        # cell_contents_are($wkst, [
-        #     [undef, q{},   q{},   undef, ],
-        #     [q{},   q{},   q{},   q{},   ],
-        #     [q{},   q{},   q{},   q{},   ],
-        #     [undef, q{},   q{},   q{},   ],
-        # ]);
+
+        # green cells have cell-formatting and are q{}
+        # blank, red, and blue cells have default formatting and are undef
+        # EXCEPTION: B2 [1,1] the blue of the column format overrides the
+        # red of the row format.  Since Row beats Col, the blue must be
+        # stored as a cell-format. Ergo the cell is q{}
+        cell_contents_are($wkst, [
+            [undef, undef,   q{},   undef, ],
+            [undef, q{},     q{},   undef, ],
+            [q{},   undef,   q{},   undef, ],
+            [undef, undef,   undef, q{},   ],
+        ]);
         my ($red, $green, $blue) = ('#ff0000', '#008000', '#0000ff');
         cell_bgcolors_are($parser, $wkst, [
             [undef,  $blue, $green, undef,  ],
