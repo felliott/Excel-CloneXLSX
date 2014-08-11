@@ -51,7 +51,7 @@ sub cell_bgcolors_are {
         my $bgcolors;
         for my $row ($row_min..$row_max) {
             for my $col ($col_min..$col_max) {
-                my $fmt = $parser->get_cell_format($wkst->get_name(), $row, $col);
+                my $fmt = $parser->get_computed_cell_format($wkst->get_name(), $row, $col);
                 $bgcolors->[$row][$col] = $fmt && $fmt->{Fill}
                     ? lc($fmt->{Fill}[1]) : undef;
             }
