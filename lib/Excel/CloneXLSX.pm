@@ -57,17 +57,17 @@ sub clone {
         my ($row_min, $row_max) = $old_wkst->row_range();
         my ($col_min, $col_max) = $old_wkst->col_range();
 
-        my $row_heights = $old_wkst->get_row_heights();
-        my $col_widths  = $old_wkst->get_col_widths();
-        my @col_fmts = map {
+        my @fmts = map {
             $self->to->add_format( %{ translate_xlsx_format($_) } )
         } @{ $self->from->workbook->{Format} };
+
+        my $row_heights = $old_wkst->get_row_heights();
+        my $col_widths  = $old_wkst->get_col_widths();
         for my $col ($col_min..$col_max) {
+            my $col_fmt_no = $old_wkst->{ColFmtNo}[$col];
             $new_wkst->set_column(
                 $col, $col, $col_widths->[$col],
-                (defined($old_wkst->{ColFmtNo}[$col])
-                    ? $col_fmts[ $old_wkst->{ColFmtNo}[$col] ]
-                    : undef),
+                (defined $col_fmt_no ? $fmts[ $col_fmt_no ] : undef),
             );
         }
 
@@ -77,7 +77,11 @@ sub clone {
         );
 
         for my $row ($row_min..$row_max) {
-            $new_wkst->set_row($row+$row_offset, $row_heights->[$row]);
+            my $row_fmt_no = $self->from->row_format_no->{$old_wkst->get_name}[$row];
+            $new_wkst->set_row(
+                $row+$row_offset, $row_heights->[$row],
+                (defined $row_fmt_no ? $fmts[ $row_fmt_no ] : undef),
+            );
 
             for my $col ($col_min..$col_max) {
                 my $cell    = $old_wkst->get_cell($row, $col);
