@@ -2,6 +2,15 @@ Revision history for Perl extension Excel-CloneXLSX
 
 {{$NEXT}}
 
+0.02 2014-08-11T12:39:00Z
+
+    - start saving row formats
+    - smarten up format storage:
+      - save cell format numbers instead of objects
+      - add get_computed_cell_format() to calculate format
+        precedence
+    - improve tests, add testing library
+
 0.01 2014-08-08T16:19:52Z
 
     - original version
