@@ -7,7 +7,7 @@ use Moo;
 extends 'Spreadsheet::ParseXLSX';
 use namespace::clean;
 
-our $VERSION = "0.02";
+our $VERSION = "0.03";
 
 
 has filehandle => (is => 'ro', isa => FileHandle, required => 1);
